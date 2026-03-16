@@ -5,7 +5,6 @@
 
 const CACHE_NAME = 'weatherx-v1.0.0';
 
-/* Assets to cache on install (app shell) */
 const APP_SHELL = [
   './',
   './index.html',
@@ -17,7 +16,6 @@ const APP_SHELL = [
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
 ];
 
-/* ── Install: cache app shell ── */
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -26,7 +24,6 @@ self.addEventListener('install', event => {
   );
 });
 
-/* ── Activate: clear old caches ── */
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -34,14 +31,11 @@ self.addEventListener('activate', event => {
     ).then(() => self.clients.claim())
   );
 });
-
-/* ── Fetch: network-first for API, cache-first for assets ── */
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   const isAPI = url.hostname.includes('openweathermap.org') || url.hostname.includes('anthropic.com');
 
   if (isAPI) {
-    /* Network-first for API calls, fall back to cached response */
     event.respondWith(
       fetch(event.request)
         .then(response => {
@@ -54,7 +48,6 @@ self.addEventListener('fetch', event => {
         .catch(() => caches.match(event.request))
     );
   } else {
-    /* Cache-first for static assets */
     event.respondWith(
       caches.match(event.request)
         .then(cached => cached || fetch(event.request)
