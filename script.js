@@ -7,7 +7,6 @@
 
 'use strict';
 
-/* ── CONFIG — No API keys needed! ── */
 const CONFIG = {
   METEO_BASE:   'https://api.open-meteo.com/v1/forecast',
   NOMINATIM:    'https://nominatim.openstreetmap.org',
@@ -15,7 +14,6 @@ const CONFIG = {
   CACHE_TTL:    10 * 60 * 1000,
 };
 
-/* ── WMO Weather Code → description + emoji + OWM-like ID for bg ── */
 const WMO = {
   0:  { desc:'Clear Sky',           icon:'☀️',  id:800 },
   1:  { desc:'Mainly Clear',        icon:'🌤️', id:801 },
@@ -51,7 +49,6 @@ function getWMO(code, isNight=false) {
   return w;
 }
 
-/* ── STATE ── */
 const state = {
   unit:           localStorage.getItem('wxUnit')  || 'metric',
   theme:          localStorage.getItem('wxTheme') || 'dark',
@@ -65,7 +62,6 @@ const state = {
   deferredPrompt: null,
 };
 
-/* ── DOM REFS ── */
 const $ = id => document.getElementById(id);
 const el = {
   body:           document.body,
@@ -117,9 +113,6 @@ const el = {
   dismissInstall: $('dismiss-install'),
 };
 
-/* ════════════════════════════════════
-   INIT
-════════════════════════════════════ */
 function init() {
   applyTheme(state.theme);
   applyUnit(state.unit);
@@ -131,7 +124,6 @@ function init() {
   else geoLocate();
 }
 
-/* ── Clock ── */
 function startClock() {
   const tick = () => {
     el.clock.textContent = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -139,7 +131,6 @@ function startClock() {
   tick(); setInterval(tick, 1000);
 }
 
-/* ── Theme / Unit ── */
 function applyTheme(t) {
   el.body.className = t;
   el.themeToggle.textContent = t==='dark' ? '🌙' : '☀️';
@@ -154,9 +145,6 @@ function applyUnit(u) {
 function toDisplay(c) { return state.unit==='imperial' ? Math.round(c*9/5+32) : Math.round(c); }
 function windDisplay(kmh) { return state.unit==='imperial' ? Math.round(kmh*0.621371)+' mph' : Math.round(kmh)+' km/h'; }
 
-/* ════════════════════════════════════
-   GEOLOCATION
-════════════════════════════════════ */
 function geoLocate() {
   if (!navigator.geolocation) { fetchWeatherByCity(CONFIG.DEFAULT_CITY); return; }
   showLoader();
@@ -167,9 +155,7 @@ function geoLocate() {
   );
 }
 
-/* ════════════════════════════════════
-   NOMINATIM — 100% FREE, no key
-════════════════════════════════════ */
+
 async function geocodeCity(city) {
   const data = await apiFetch(`${CONFIG.NOMINATIM}/search?q=${encodeURIComponent(city)}&format=json&limit=1&addressdetails=1`);
   if (!data || !data.length) throw new Error(`City "${city}" not found.`);
@@ -210,9 +196,6 @@ async function fetchAutocompleteSuggestions(query) {
 }
 function hideAC() { el.autocomplete.classList.add('hidden'); el.autocomplete.innerHTML = ''; }
 
-/* ════════════════════════════════════
-   FETCH WEATHER — Open-Meteo FREE
-════════════════════════════════════ */
 async function fetchWeatherByCity(city) {
   showLoader();
   try {
@@ -245,9 +228,6 @@ async function fetchWeatherByCoords(lat, lon, cityOverride, countryOverride) {
   } catch(e) { showError(e.message || 'Failed to fetch weather.'); }
 }
 
-/* ════════════════════════════════════
-   RENDER
-════════════════════════════════════ */
 function renderAll(data, geo) {
   const c   = data.current;
   const wmo = getWMO(c.weather_code, c.is_day===0);
@@ -285,7 +265,6 @@ function renderAll(data, geo) {
   generateLocalAIInsights(c, data.daily, geo.name);
 }
 
-/* ── Hourly ── */
 function renderHourly(hourly) {
   if (!hourly) return;
   const now      = new Date();
@@ -312,7 +291,6 @@ function renderHourly(hourly) {
   });
 }
 
-/* ── 7-Day ── */
 function renderForecast(daily) {
   if (!daily) return;
   el.forecastList.innerHTML = '';
@@ -331,9 +309,6 @@ function renderForecast(daily) {
   });
 }
 
-/* ════════════════════════════════════
-   MAP — Leaflet + OSM (free, no key)
-════════════════════════════════════ */
 function initMap(lat, lon, city, temp) {
   if (!state.map) {
     state.map = L.map('map',{zoomControl:true,scrollWheelZoom:true}).setView([lat,lon],10);
@@ -353,9 +328,6 @@ function initMap(lat, lon, city, temp) {
   state.mapMarker = L.marker([lat,lon],{icon}).addTo(state.map);
 }
 
-/* ════════════════════════════════════
-   AI INSIGHTS — Smart local engine
-════════════════════════════════════ */
 function generateLocalAIInsights(c, daily, city) {
   el.aiLoading.classList.remove('hidden');
   el.aiContent.classList.add('hidden');
@@ -454,9 +426,6 @@ function generateLocalAIInsights(c, daily, city) {
   }, 800);
 }
 
-/* ════════════════════════════════════
-   ANIMATED CANVAS BACKGROUND
-════════════════════════════════════ */
 const canvas = el.canvas;
 const ctx    = canvas.getContext('2d');
 let particles = [], animationId, bgMode = 'clear';
@@ -548,9 +517,6 @@ function drawBG() {
 
 window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
 
-/* ════════════════════════════════════
-   API HELPER + SESSION CACHE
-════════════════════════════════════ */
 async function apiFetch(url) {
   const cached = cacheGet(url);
   if (cached) return cached;
@@ -563,9 +529,6 @@ async function apiFetch(url) {
 function cacheSet(k,v){try{sessionStorage.setItem('wx_'+k,JSON.stringify({ts:Date.now(),value:v}));}catch(_){}}
 function cacheGet(k){try{const r=sessionStorage.getItem('wx_'+k);if(!r)return null;const{ts,value}=JSON.parse(r);if(Date.now()-ts>CONFIG.CACHE_TTL){sessionStorage.removeItem('wx_'+k);return null;}return value;}catch(_){return null;}}
 
-/* ════════════════════════════════════
-   EVENTS
-════════════════════════════════════ */
 function bindEvents() {
   el.themeToggle.addEventListener('click',()=>{state.theme=state.theme==='dark'?'light':'dark';applyTheme(state.theme);});
   el.unitToggle.addEventListener('click',()=>{
@@ -588,15 +551,13 @@ function bindEvents() {
 
 function doSearch(){const q=el.searchInput.value.trim();if(!q)return;hideAC();fetchWeatherByCity(q);}
 
-/* ── UI Helpers ── */
 function showLoader(){el.loader.classList.remove('hidden');el.main.classList.add('hidden');el.error.classList.add('hidden');}
 function hideLoader(){el.loader.classList.add('hidden');}
 function showError(msg){hideLoader();el.errorText.textContent=msg;el.error.classList.remove('hidden');el.main.classList.add('hidden');}
 function hideError(){el.error.classList.add('hidden');}
 function degToCompass(d){return['N','NE','E','SE','S','SW','W','NW'][Math.round(d/45)%8];}
 
-/* ── Service Worker ── */
+
 function registerServiceWorker(){if('serviceWorker'in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{});}
 
-/* ── Boot ── */
 init();
