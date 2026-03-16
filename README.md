@@ -6,7 +6,7 @@
 ## ✨ Features
 
 ### 🌍 Core Weather
-- **Auto location detection** via Geolocation API (falls back to London)
+- **Auto location detection** via Geolocation API 
 - **Real-time data** from OpenWeatherMap API
 - Current temperature, condition, humidity, wind speed & direction
 - Pressure, visibility, feels like, UV index, sunrise & sunset
@@ -44,23 +44,13 @@ Powered by Claude (Anthropic API), WeatherX AI generates:
 - Smooth CSS variable transition
 
 ### 🕐 Live Clock
-- Auto-updating clock in the header (updates every second)
+- Auto-updating clock in the header.
 
 ### 🗺️ Interactive Map
 - Powered by **Leaflet.js** + OpenStreetMap
 - Shows current location with a temperature badge marker
 - **Click anywhere on the map** to fetch weather for that point
 - Auto-pans to new locations
-
-### 📡 PWA Support
-- **Installable** on desktop and mobile (Add to Home Screen)
-- **Offline support** — cached app shell + cached API responses
-- Service Worker with network-first (API) and cache-first (assets) strategy
-- App manifest with icons, theme colors, and shortcuts
-
----
-
-
 
 ### 1. Clone the Repository
 ```bash
