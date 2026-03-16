@@ -60,7 +60,7 @@ Powered by Claude (Anthropic API), WeatherX AI generates:
 
 ---
 
-## 🚀 Installation
+
 
 ### 1. Clone the Repository
 ```bash
