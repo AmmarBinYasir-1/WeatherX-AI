@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WeatherX AI</title>
+  <meta name="description" content="Premium AI-powered weather app with real-time forecasts, smart insights, and stunning visuals." />
+  <meta name="theme-color" content="#0f0c29" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dark">
+
+  <!-- Animated Background Canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Install PWA Banner -->
+  <div id="install-banner" class="install-banner hidden">
+    <span>📲 Install WeatherX AI as an app</span>
+    <button id="install-btn">Install</button>
+    <button id="dismiss-install">✕</button>
+  </div>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="logo">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">WeatherX <em>AI</em></span>
+    </div>
+    <div class="topbar-right">
+      <div id="live-clock" class="live-clock"></div>
+      <button id="unit-toggle" class="pill-btn" title="Toggle °C / °F">°C</button>
+      <button id="theme-toggle" class="icon-btn" title="Toggle dark/light mode">🌙</button>
+    </div>
+  </header>
+
+  <!-- Search Bar -->
+  <section class="search-section">
+    <div class="search-wrapper">
+      <input type="text" id="search-input" class="search-input" placeholder="Search city or country…" autocomplete="off" />
+      <button id="search-btn" class="search-btn">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button id="locate-btn" class="locate-btn" title="Use my location">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" stroke-dasharray="2 3"/></svg>
+      </button>
+      <!-- Autocomplete Dropdown -->
+      <ul id="autocomplete-list" class="autocomplete-list hidden"></ul>
+    </div>
+    <!-- Popular Cities -->
+    <div class="popular-cities">
+      <span class="pop-label">Popular:</span>
+      <button class="city-tag" data-city="New York">New York</button>
+      <button class="city-tag" data-city="London">London</button>
+      <button class="city-tag" data-city="Tokyo">Tokyo</button>
+      <button class="city-tag" data-city="Dubai">Dubai</button>
+      <button class="city-tag" data-city="Paris">Paris</button>
+      <button class="city-tag" data-city="Sydney">Sydney</button>
+    </div>
+  </section>
+
+  <!-- Loading Spinner -->
+  <div id="loader" class="loader hidden">
+    <div class="spinner"></div>
+    <p>Fetching weather…</p>
+  </div>
+
+  <!-- Error Message -->
+  <div id="error-msg" class="error-msg hidden">
+    <span id="error-text">Something went wrong.</span>
+    <button id="retry-btn">Retry</button>
+  </div>
+
+  <!-- Main Content -->
+  <main id="main-content" class="main-content hidden">
+
+    <!-- Current Weather Hero -->
+    <section class="hero-card glass-card">
+      <div class="hero-left">
+        <div class="hero-location">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span id="city-name">London</span>, <span id="country-name">GB</span>
+        </div>
+        <div class="hero-date" id="hero-date"></div>
+        <div class="hero-temp">
+          <span id="temp-value">--</span>
+          <span class="temp-unit">°<span id="unit-label">C</span></span>
+        </div>
+        <div class="hero-condition" id="condition-text">Loading…</div>
+        <div class="hero-feels">Feels like <span id="feels-like">--</span>°</div>
+      </div>
+      <div class="hero-right">
+        <div id="weather-icon-anim" class="weather-icon-anim"></div>
+        <div class="hero-minmax">
+          <span class="badge-hi">↑ <span id="temp-max">--</span>°</span>
+          <span class="badge-lo">↓ <span id="temp-min">--</span>°</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Grid -->
+    <section class="stats-grid">
+      <div class="stat-card glass-card">
+        <div class="stat-icon">💧</div>
+        <div class="stat-label">Humidity</div>
+        <div class="stat-value" id="humidity">--%</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-icon">🌬️</div>
+        <div class="stat-label">Wind</div>
+        <div class="stat-value" id="wind-speed">-- km/h</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-icon">🌡️</div>
+        <div class="stat-label">Pressure</div>
+        <div class="stat-value" id="pressure">-- hPa</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-icon">☀️</div>
+        <div class="stat-label">UV Index</div>
+        <div class="stat-value" id="uv-index">--</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-icon">👁️</div>
+        <div class="stat-label">Visibility</div>
+        <div class="stat-value" id="visibility">-- km</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-icon">🌅</div>
+        <div class="stat-label">Sunrise</div>
+        <div class="stat-value" id="sunrise">--:--</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-icon">🌇</div>
+        <div class="stat-label">Sunset</div>
+        <div class="stat-value" id="sunset">--:--</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-icon">💨</div>
+        <div class="stat-label">Wind Dir</div>
+        <div class="stat-value" id="wind-dir">--</div>
+      </div>
+    </section>
+
+    <!-- Weather Alert (if any) -->
+    <div id="alert-box" class="alert-box glass-card hidden">
+      <span class="alert-icon">⚠️</span>
+      <div>
+        <strong>Weather Alert</strong>
+        <p id="alert-text"></p>
+      </div>
+    </div>
+
+    <!-- AI Insights Panel -->
+    <section class="ai-panel glass-card">
+      <div class="ai-header">
+        <span class="ai-badge">✨ AI Insights</span>
+        <button id="refresh-ai" class="icon-btn small" title="Refresh AI insights">↺</button>
+      </div>
+      <div id="ai-loading" class="ai-loading hidden">
+        <div class="ai-dots"><span></span><span></span><span></span></div>
+        <span>Generating insights…</span>
+      </div>
+      <div id="ai-content" class="ai-content">
+        <div class="ai-section" id="ai-summary-section">
+          <h4>🌍 Weather Summary</h4>
+          <p id="ai-summary">--</p>
+        </div>
+        <div class="ai-grid">
+          <div class="ai-tip-card">
+            <h4>👗 What to Wear</h4>
+            <p id="ai-clothing">--</p>
+          </div>
+          <div class="ai-tip-card">
+            <h4>🏃 Activities</h4>
+            <p id="ai-activity">--</p>
+          </div>
+          <div class="ai-tip-card">
+            <h4>❤️ Health Advice</h4>
+            <p id="ai-health">--</p>
+          </div>
+          <div class="ai-tip-card">
+            <h4>💡 Pro Tip</h4>
+            <p id="ai-tip">--</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hourly Forecast -->
+    <section class="hourly-section glass-card">
+      <h3 class="section-title">Hourly Forecast</h3>
+      <div class="hourly-slider" id="hourly-slider">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- 7-Day Forecast -->
+    <section class="forecast-section glass-card">
+      <h3 class="section-title">7-Day Forecast</h3>
+      <div id="forecast-list" class="forecast-list">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Map -->
+    <section class="map-section glass-card">
+      <h3 class="section-title">📍 Location Map</h3>
+      <div id="map" class="map-container"></div>
+      <p class="map-hint">Click anywhere on the map to get weather for that location.</p>
+    </section>
+
+  </main>
+
+
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>Made with ❤️ by <strong>Ammar Bin Yasir</strong></p>
+    <div class="footer-links">
+      <a href="https://x.com/AmmarBinYasir_1" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
+        @AmmarBinYasir_1
+      </a>
+      <a href="https://github.com/AmmarBinYasir-1" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        AmmarBinYasir-1
+      </a>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
